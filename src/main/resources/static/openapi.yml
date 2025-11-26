@@ -1,0 +1,249 @@
+openapi: 3.0.3
+info:
+  title: Access Manager API
+  version: "1.0.0"
+  description: API para solicitação e gerenciamento de acesso a módulos corporativos.
+
+servers:
+  - url: http://localhost:8080
+    description: Ambiente Local
+
+security:
+  - BearerAuth: []
+
+paths:
+
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Realiza login e retorna um JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login realizado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/modulos:
+    get:
+      tags: [Módulos]
+      summary: Lista todos os módulos disponíveis
+      responses:
+        "200":
+          description: Lista dos módulos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ModuloResponse"
+
+  /api/v1/solicitacoes:
+    post:
+      tags: [Solicitações]
+      summary: Cria uma nova solicitação de acesso
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CriarSolicitacaoRequest"
+      responses:
+        "200":
+          description: Solicitação criada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResultadoSolicitacaoResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+    delete:
+      tags: [Solicitações]
+      summary: Cancela uma solicitação existente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelarSolicitacaoRequest"
+      responses:
+        "204":
+          description: Solicitação cancelada com sucesso
+
+    get:
+      tags: [Solicitações]
+      summary: Lista solicitações do usuário autenticado (paginado)
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 0 }
+        - name: size
+          in: query
+          schema: { type: integer, default: 10 }
+      responses:
+        "200":
+          description: Página de solicitações
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageListagemSolicitacao"
+
+  /api/v1/solicitacoes/renovar:
+    post:
+      tags: [Solicitações]
+      summary: Solicita renovação de uma solicitação existente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SolicitarRenovacaoRequest"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResultadoSolicitacaoResponse"
+
+  /api/v1/solicitacoes/{id}:
+    get:
+      tags: [Solicitações]
+      summary: Busca solicitação por ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Solicitação encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SolicitacaoResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: Erro de validação
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    Unauthorized:
+      description: Token inválido ou ausente
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp: { type: string, format: date-time }
+        status: { type: integer }
+        erro: { type: string }
+        mensagem: { type: string }
+        path: { type: string }
+
+    LoginRequest:
+      type: object
+      required: [email, senha]
+      properties:
+        email: { type: string }
+        senha: { type: string }
+
+    LoginResponse:
+      type: object
+      properties:
+        token: { type: string }
+
+    ModuloResponse:
+      type: object
+      properties:
+        id: { type: integer }
+        nome: { type: string }
+        tipo: { type: string }
+
+    CriarSolicitacaoRequest:
+      type: object
+      properties:
+        moduloId: { type: integer }
+        justificativa: { type: string }
+
+    CancelarSolicitacaoRequest:
+      type: object
+      properties:
+        solicitacaoId: { type: integer }
+
+    SolicitarRenovacaoRequest:
+      type: object
+      properties:
+        solicitacaoId: { type: integer }
+
+    ResultadoSolicitacaoResponse:
+      type: object
+      properties:
+        protocolo: { type: string }
+        status: { type: string }
+        validade: { type: string, format: date }
+
+    SolicitacaoResponse:
+      type: object
+      properties:
+        id: { type: integer }
+        protocolo: { type: string }
+        modulo: { $ref: "#/components/schemas/ModuloResponse" }
+        status: { type: string }
+        validade: { type: string, format: date }
+
+    ListagemSolicitacaoResponse:
+      type: object
+      properties:
+        id: { type: integer }
+        modulo: { type: string }
+        status: { type: string }
+        validade: { type: string, format: date }
+
+    PageListagemSolicitacao:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/ListagemSolicitacaoResponse"
+        totalElements: { type: integer }
+        totalPages: { type: integer }
+        size: { type: integer }
+        number: { type: integer }

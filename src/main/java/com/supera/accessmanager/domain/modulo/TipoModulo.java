@@ -1,0 +1,14 @@
+package com.supera.accessmanager.domain.modulo;
+
+public enum TipoModulo {
+    PORTAL_COLABORADOR,
+    RELATORIOS_GERENCIAIS,
+    GESTAO_FINANCEIRA,
+    APROVADOR_FINANCEIRO,
+    SOLICITANTE_FINANCEIRO,
+    ADMINISTRADOR_RH,
+    COLABORADOR_RH,
+    GESTAO_ESTOQUE,
+    COMPRAS,
+    AUDITORIA
+}
